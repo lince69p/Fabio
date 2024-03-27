@@ -1,0 +1,60 @@
+import pandas as pd
+import time
+
+# Configuración del navegador para Selenium
+options = webdriver.ChromeOptions()
+options.add_argument('--start-maximized')
+options.add_argument('--disable-extensions')
+driver_path = 'C:\\Users\\rodgo\\Downloads\\chromedriver_win32\\chromedriver.exe'
+
+# Inicialización del navegador
+driver = webdriver.Chrome(driver_path, chrome_options=options)
+driver.set_window_position(2000, 0)  # Iniciar en la pantalla 2
+driver.maximize_window()
+driver.get('https://eltiempo.es')
+
+# Suprimir ventana emergente de cookies si aparece
+try:
+    driver.find_element_by_css_selector('button.didomi-components-button.didomi-dismiss-button').click()
+except:
+    pass
+
+# Buscar información sobre el tiempo en Madrid
+search_box = driver.find_element_by_css_selector('input#inputSearch')
+search_box.send_keys('Madrid')
+
+# Hacer clic en el icono de búsqueda
+search_box.click()
+
+# Hacer clic en el icono del tiempo
+driver.find_element_by_css_selector('i.icon_weather_s.icon.icon-local').click()
+
+# Obtener información sobre el tiempo de hoy
+time_today_link = driver.find_element_by_xpath(
+    '/html/body/div[7]/main/div[4]/div/section[4]/section/div/article/section/ul/li[2]/a'
+    )
+time_today_link.click()
+
+# Obtener datos sobre el tiempo de hoy
+time_today_text = driver.find_element_by_xpath(
+    '/html/body/div[7]/main/div[4]/div/section[4]/section/div[1]/ul'
+    ).text
+time_today_list = time_today_text.split('\n')
+time_hour = [x.split(' ')[1] for x in time_today_list if x.startswith('hora:')][0]
+
+# Procesar datos meteorológicos
+horas, temp, v_viento = [], [], []
+
+for i in range(0, len(time_today_list), 4):
+    if time_today_list[i].startswith('hora:') and time_today_list[i + 1].startswith('°C'):
+        hora = time_today_list[i + 1].split(' ')[0]
+        temperatura = int(time_today_list[i + 2].split(' ')[0])
+        v_viento = time_today_list[i + 3].split(' ')[0]
+        hora_dt = datetime.strptime(hora + " 00:00:00", '%H:%M:%S')
+        hora_actual = hora_dt.time()
+        hora_actual = hora_actual.replace(minute=0, second=0, microsecond=0)
+        hora_actual = hora_actual.time().replace(hour=int(hora_actual.hour))
+        hora = int(hora_actual)
+        temp = temperatura
+
+
